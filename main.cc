@@ -252,6 +252,38 @@ std::wstring GetCurrentTimeString()
 }
 
 // ================================================================================================
+// wstring to Get Current System Date
+// ================================================================================================
+std::wstring GetCurrentDateString()
+{
+    SYSTEMTIME st;
+    GetLocalTime(&st);
+
+    static const wchar_t* DAYS[] = {
+        L"Sunday", L"Monday", L"Tuesday", L"Wednesday",
+        L"Thursday", L"Friday", L"Saturday"
+    };
+
+    static const wchar_t* MONTHS[] = {
+        L"", L"January", L"February", L"March", L"April", L"May", L"June",
+        L"July", L"August", L"September", L"October", L"November", L"December"
+    };
+
+    wchar_t buffer[128];
+
+    swprintf_s(
+        buffer,
+        L"%s, %s %d, %d",
+        DAYS[st.wDayOfWeek],
+        MONTHS[st.wMonth],
+        st.wDay,
+        st.wYear
+    );
+
+    return std::wstring(buffer);
+}
+
+// ================================================================================================
 // Render Loop
 // ================================================================================================
 void Render()
@@ -260,29 +292,39 @@ void Render()
     if (!gContext || !gRTV || !gD2DTarget) return;
     float clearColor[4] = { 0.1f, 0.1f, 0.3f, 1.0f };
     gContext->ClearRenderTargetView(gRTV, clearColor);
-
     gD2DTarget->BeginDraw();
 
+    // Outlined Text Test 1
     DrawOutlinedText(
         gD2DTarget,
         gDWriteFactory,
         gTextFormat,
-        // L"Hello DirectX~",            // <-- this is static long string
-        GetCurrentTimeString().c_str(),  // <-- this will call get current time string
+        GetCurrentTimeString().c_str(),     // <-- this will call get current time string
         30.0f, 20.0f,
         8.0f,
         gWhiteBrush,
         gBlackBrush
     );
 
-    // Another Outlined Text Test
+    // Another Outlined Text Test 2
     DrawOutlinedText(
         gD2DTarget,
         gDWriteFactory,
         gTextFormat,
         L"This is only a test",             // <-- this is static long string
-        // GetCurrentTimeString().c_str(),  // <-- this will call get current time string
         320.0f, 20.0f,
+        8.0f,
+        gWhiteBrush,
+        gBlackBrush
+    );
+
+    // Another Outlined Text Test 3
+    DrawOutlinedText(
+        gD2DTarget,
+        gDWriteFactory,
+        gTextFormat,
+        GetCurrentDateString().c_str(),     // <-- this will call get current date string
+        30.0f, 90.0f,
         8.0f,
         gWhiteBrush,
         gBlackBrush
