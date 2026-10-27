@@ -1,3 +1,11 @@
+// =======================================================================================
+// DISCLAIMER: This Code was generated in whole on in part by a mixture 
+//             of a Human Programmer and an AI Copilot.
+// =======================================================================================
+// (C) 2025,2026 adtanx64 on Github. All Rights Reserved.
+// SEE ATTACHED LICENSE FILE FOR TERMS OF USE AND LICENSING AGREEMENT.
+// =======================================================================================
+
 #ifndef UNICODE
 #define UNICODE
 #endif 
@@ -7,9 +15,23 @@
 #include <dxgi.h>
 #include <d2d1.h>
 #include <dwrite.h>
+#include <dwmapi.h>
 #include <string>
 #include "resource.h"
 
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+
+#ifndef DWMWA_CAPTION_COLOR
+#define DWMWA_CAPTION_COLOR 35
+#endif
+
+#ifndef DWMWA_TEXT_COLOR
+#define DWMWA_TEXT_COLOR 36
+#endif
+
+#pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d2d1.lib")
@@ -232,8 +254,10 @@ void Resize(UINT width, UINT height)
     dxgiSurface->Release();
 }
 
+/*
+
 // ================================================================================================
-// wstring to Get Current System Time
+// wstring to Get Current local System Time
 // ================================================================================================
 std::wstring GetCurrentTimeString()
 {
@@ -247,6 +271,27 @@ std::wstring GetCurrentTimeString()
         st.wSecond,
         (st.wHour < 12 ? L"AM" : L"PM")
     );
+
+    return std::wstring(buffer);
+}
+
+*/
+
+// ================================================================================================
+// wstring to Get Current local System Time
+// ================================================================================================
+
+std::wstring GetCurrentTimeString()
+{
+    SYSTEMTIME st;
+    GetSystemTime(&st); // UTC
+    // GetLocalTime(&st);
+
+    wchar_t buffer[16];
+    swprintf_s(buffer, L"%02u:%02u:%02u H",
+        st.wHour,
+        st.wMinute,
+        st.wSecond);
 
     return std::wstring(buffer);
 }
@@ -311,8 +356,8 @@ void Render()
         gD2DTarget,
         gDWriteFactory,
         gTextFormat,
-        L"This is only a test",             // <-- this is static long string
-        320.0f, 20.0f,
+        L"Project DX",                      // <-- this is static long string
+        280.0f, 20.0f,
         8.0f,
         gWhiteBrush,
         gBlackBrush
@@ -335,7 +380,36 @@ void Render()
 }
 
 // ================================================================================================
-// WinMain
+// Enable Dark Title Bar
+// ================================================================================================
+void EnableDarkTitleBar(HWND hwnd)
+{
+    BOOL dark = TRUE;
+
+    DwmSetWindowAttribute(
+        hwnd,
+        DWMWA_USE_IMMERSIVE_DARK_MODE,
+        &dark,
+        sizeof(dark));
+
+    COLORREF captionColor = RGB(32, 32, 32);
+    COLORREF textColor = RGB(255, 255, 255);
+
+    DwmSetWindowAttribute(
+        hwnd,
+        DWMWA_CAPTION_COLOR,
+        &captionColor,
+        sizeof(captionColor));
+
+    DwmSetWindowAttribute(
+        hwnd,
+        DWMWA_TEXT_COLOR,
+        &textColor,
+        sizeof(textColor));
+}
+
+// ================================================================================================
+// wWinMain
 // ================================================================================================
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow)
 {
@@ -352,7 +426,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow)
     RegisterClass(&wc);
 
     HWND hwnd = CreateWindowEx(
-        0, CLASS_NAME, L"DirectX Test Program",
+        0, CLASS_NAME, L"TimeCheck - DirectX Test Program",
         WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT,
         1024, 600,
@@ -360,6 +434,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int nCmdShow)
         hInstance, nullptr
     );
 
+    EnableDarkTitleBar(hwnd);
     ShowWindow(hwnd, nCmdShow);
 
     InitD3D(hwnd);
@@ -392,17 +467,26 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
-    case WM_ENTERSIZEMOVE:
+    case WM_ACTIVATE: {
+        EnableDarkTitleBar(hwnd);
+        break;
+    }
+    case WM_NCACTIVATE: {
+        EnableDarkTitleBar(hwnd);
+        break;
+    }
+    case WM_ENTERSIZEMOVE: {
         gInSizeMove = true;
         // ~100 FPS timer (10 ms)
+        // TO DO NEXT: insteaad of using a statically set 10 something like that, instead, i want to use a dynamic timer that will adjust based on the monitor refresh rate, so that it can maintain a consistent frame rate regardless of the system performance.
         SetTimer(hwnd, gRenderTimerId, 10, nullptr);
         return 0;
-
-    case WM_EXITSIZEMOVE:
+    }
+    case WM_EXITSIZEMOVE: {
         gInSizeMove = false;
         KillTimer(hwnd, gRenderTimerId);
         return 0;
-
+    }
     case WM_TIMER:
         if (wParam == gRenderTimerId)
         {
